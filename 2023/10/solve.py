@@ -1,5 +1,4 @@
 """AOC 10th day."""
-import numpy as np
 from matplotlib import path
 
 steps = {
@@ -9,14 +8,14 @@ steps = {
   "↓": (0, 1)
 }
 
-tiles = {
+tiles = { # alternative symbol just for visualization 
   "|": "║",
   "-": "═",
   "L": "╚",
   "J": "╝",
   "7": "╗",
   "F": "╔",
-  ".": "░",
+  ".": " ",
   "S": "S"
 }
 
@@ -152,8 +151,7 @@ def main():
 
   # part2
   my_path = [s_coords, *path1]
-  npArray = np.array([[point[0], point[1]] for point in my_path ])
-  npPath = path.Path(npArray)
+  npPath = path.Path(my_path)
 
   points_within = 0
   for iy, row in enumerate(array2D):
