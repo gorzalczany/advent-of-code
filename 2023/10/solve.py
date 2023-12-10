@@ -60,8 +60,6 @@ def findSReplacement(s_coords, array2D):
           cX = s_coords[0]+step_coords[0]
           cY = s_coords[1]+step_coords[1]
           toCheck = array2D[cY][cX]
-          if cX < 0 or cY < 0 or cY > len(array2D) or cX > len(array2D[cY]):
-              continue
           pipe_directions = connections[tile]
           available_connection = pipe_directions.get(step_direction, [])
           if toCheck in available_connection or toCheck == "S":
