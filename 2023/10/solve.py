@@ -147,7 +147,8 @@ def main():
   furthermost = getFurthermostPoint(path1, path2)
   print(f"replace S with: {tiles[s_replacement]}")
   print(f"furthermost point: {furthermost}")
-  print(f"Steps: {path1.index(furthermost)+1}")
+  # do not count first tile (S) as step and then we add 1 cause first step index is 0
+  print(f"Steps: {path1[1::].index(furthermost)+1}")
 
   # part2
   my_path = [s_coords, *path1]
