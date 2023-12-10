@@ -41,7 +41,10 @@ def part2(dataset):
     predictions.append(predictFrom(history[::-1]))
   return sum(predictions)
 
-dataset = parseInput('./9/1.txt')
+dataset = parseInput('./9/0.txt')
 # print(part1(dataset))
 # print(part2(dataset))
-printDifferenceTable(dataset[2])
+history = dataset[2]
+printDifferenceTable(history)
+history.append(predictFrom(history))
+printDifferenceTable(history)
