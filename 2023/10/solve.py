@@ -28,7 +28,10 @@ connections = {
   "F": {"↓": ["J", "L", "|"], "→": ["-", "J", "7"]},
 }
 
-def isConnected(x, y, array2D):
+def isTileInClosedLoop(x, y, array2D):
+    """ function became useless after finishing part 2
+        it helped to clean visualization in part 1 tho
+    """
     if array2D[y][x] == "S":
        return True
     elif array2D[y][x] == ".":
@@ -41,8 +44,6 @@ def isConnected(x, y, array2D):
           cX = x+step_coords[0]
           cY = y+step_coords[1]
           toCheck = array2D[cY][cX]
-          if cX < 0 or cY < 0 or cY > len(array2D) or cX > len(array2D[y]):
-              continue
           pipe_directions = connections[tile]
           available_connection = pipe_directions.get(step_direction, [])
           if toCheck in available_connection or toCheck == "S":
@@ -138,7 +139,7 @@ def main():
     for ix, tile in enumerate(row):
         if tile == "S":
           s_coords = (ix, iy)
-        if not isConnected(ix,iy, array2D):
+        if not isTileInClosedLoop(ix,iy, array2D):
           array2D[iy][ix] = "."
 
   s_replacement = findSReplacement(s_coords, array2D)
@@ -164,7 +165,10 @@ def main():
           points_within += 1
 
   print(f"points within: {points_within}")
-  pathPrint(array2D)
+
+  print_visualization = False
+  if print_visualization:
+    pathPrint(array2D)
 
 if __name__ == '__main__':
     main()
