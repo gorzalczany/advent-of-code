@@ -10,10 +10,9 @@ def check_page(instruction, page, rules):
     return True
 
 def is_instruction_correct(instruction, rules):
-    every_page_correct = True
     for page in instruction:
-        every_page_correct &= check_page(instruction, page, rules)
-    return every_page_correct
+        if check_page(instruction, page, rules) == False: return False
+    return True
 
 def correct_instruction(instruction, rules):
     for page in instruction:
