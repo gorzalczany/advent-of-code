@@ -2,21 +2,20 @@
 """AOC 5th day."""
 
 def check_page(instruction, page, rules):
-   is_page_ok = True
-   page_rules = filter(lambda rule: rule[0] == page, rules)
-   where_page = instruction.index(page)
-   for (page, other) in page_rules:
-      if other in instruction and instruction.index(other) < where_page:
-        is_page_ok = False
-   return is_page_ok
+    page_rules = filter(lambda rule: rule[0] == page, rules)
+    where_page = instruction.index(page)
+    for (page, other) in page_rules:
+        if other in instruction and instruction.index(other) < where_page:
+            return False
+    return True
 
-def correct_instruction(instruction, rules):
+def is_instruction_correct(instruction, rules):
     every_page_correct = True
     for page in instruction:
         every_page_correct &= check_page(instruction, page, rules)
-    if every_page_correct:
-       return
+    return every_page_correct
 
+def correct_instruction(instruction, rules):
     for page in instruction:
         page_rules = filter(lambda rule: rule[0] == page, rules)
         where_page = instruction.index(page)
@@ -26,7 +25,8 @@ def correct_instruction(instruction, rules):
                 instruction.pop(where_page)
                 instruction.insert(where_other, page)
                 break
-    correct_instruction(instruction, rules)
+    if is_instruction_correct(instruction, rules): return
+    else: correct_instruction(instruction, rules)
 
 def main():
     file = open('01.txt', 'r')
@@ -47,10 +47,7 @@ def main():
     correct_middle_points = []
     corrected_middle_points = []
     for instruction in instructions:
-        every_page_correct = True
-        for page in instruction:
-            every_page_correct &= check_page(instruction, page, rules)
-        if every_page_correct:
+        if is_instruction_correct(instruction, rules):
            mid = int((len(instruction) - 1)/2)
            correct_middle_points.append(instruction[mid])
         else:
