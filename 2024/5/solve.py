@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """AOC 5th day."""
 
-def check_page(instruction, page, rules):
+def is_page_in_correct_place(instruction, page, rules):
     page_rules = filter(lambda rule: rule[0] == page, rules)
     where_page = instruction.index(page)
     for (page, other) in page_rules:
@@ -11,7 +11,7 @@ def check_page(instruction, page, rules):
 
 def is_instruction_correct(instruction, rules):
     for page in instruction:
-        if check_page(instruction, page, rules) == False: return False
+        if not is_page_in_correct_place(instruction, page, rules): return False
     return True
 
 def correct_instruction(instruction, rules):
