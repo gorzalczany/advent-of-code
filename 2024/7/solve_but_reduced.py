@@ -26,8 +26,7 @@ def main():
     
     class Input:
         def __init__(self, tuple):
-            self.expected = tuple[0]
-            self.numbers = tuple[1]
+            (self.expected, self.numbers) = tuple
     
     input = list(map(Input, map(lambda raw_input: (int(raw_input[0]), list(map(int, raw_input[1].split()))),map(lambda line: line.split(":"),lines))))
     print(reduce(lambda acc, next: acc + next.expected if isPossiblyTrue(next.numbers, next.expected, [mul, add]) else acc, input, 0))
