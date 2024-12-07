@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """AOC 7th day."""
 
+import sys
 from operator import mul, add
 from functools import reduce
 from itertools import product
@@ -21,8 +22,8 @@ def isPossiblyTrue(input, expected, operators):
 def concat(a, b):
     return int(f"{a}{b}")
 
-def main():
-    lines =  open('01.txt', 'r').read().splitlines()
+def main(input_file):
+    lines =  input_file.read().splitlines()
     
     class Input:
         def __init__(self, tuple):
@@ -32,4 +33,6 @@ def main():
     print(reduce(lambda acc, next: acc + next.expected if isPossiblyTrue(next.numbers, next.expected, [mul, add]) else acc, input, 0))
     print(reduce(lambda acc, next: acc + next.expected if isPossiblyTrue(next.numbers, next.expected, [mul, add, concat]) else acc, input, 0))
 
-main()
+if __name__ == '__main__':
+    env_test_run = sys.argv[-1] == '-t'
+    main(open('01.txt' if not env_test_run else '00.txt', 'r'))

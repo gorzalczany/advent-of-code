@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """AOC 7th day."""
 
+import sys
 from operator import mul, add
 from functools import reduce
 from itertools import product
@@ -21,9 +22,8 @@ def isPossiblyTrue(input, expected, operators):
 def concat(a, b):
     return int(f"{a}{b}")
 
-def main():
-    file = open('01.txt', 'r')
-    lines = file.read().splitlines()
+def main(input_file):
+    lines =  input_file.read().splitlines()
     
     sum = 0
     sum_with_concat = 0
@@ -40,4 +40,6 @@ def main():
     print(sum)
     print(sum_with_concat)
 
-main()
+if __name__ == '__main__':
+    env_test_run = sys.argv[-1] == '-t'
+    main(open('01.txt' if not env_test_run else '00.txt', 'r'))
