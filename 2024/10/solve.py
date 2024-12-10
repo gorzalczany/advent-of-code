@@ -40,7 +40,6 @@ def countTrailsForPt2(start, topographic_map):
             count += 1
             continue
         count += countTrailsForPt2(next, topographic_map)
-
     return count
 
 def scorePt2(trailhead, topographic_map):
@@ -56,7 +55,6 @@ def scorePt1(trailhead, topographic_map):
             nine_coords.add(next)
         toScore += findNext(next, topographic_map)
     return len(nine_coords)
-
 
 def main(input_file):
     lines =  input_file.read().splitlines()
