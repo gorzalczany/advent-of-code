@@ -21,18 +21,15 @@ def main(input_file):
     line =  input_file.read()
     stones = line.split()
 
-    stones_counter = Counter()
-    for stone in stones:
-        stones_counter[stone] += 1
+    stones_counter = Counter(stones)
         
-    for i in range(0, 75):
+    for _ in range(0, 75):
         new_counter = Counter()
         for stone, count in stones_counter.items():
-            stones_counter[stone] = 0
             newStones = blinkAt(stone)
             for newStone in newStones:
                 new_counter[newStone] += count
-        stones_counter = stones_counter+new_counter
+        stones_counter = new_counter
         
     print(sum(stones_counter.values()))
 
