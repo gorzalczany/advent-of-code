@@ -2,9 +2,28 @@
 """AOC 12th day."""
 import sys
 
-adjacency_list = [ (0,1), (0,-1), (-1,0), (1,0)]
+adjacency_list = [(0,1), (0,-1), (-1,0), (1,0)]
+
+def applyVector(a, ab):
+    ax, ay = a
+    dx, dy = ab
+    return (ax+dx, ay+dy)
+
+
+def getRegions(farm_map):
+    regions = []
+    checked_coords = set()
+    for y, row in enumerate(farm_map):
+        for x, plant_type in enumerate(row):
+            if (x, y) in checked_coords: 
+                continue
+            area = floodFillRegion(farm_map, (x, y))
+            regions.append((plant_type, area))
+            checked_coords.update(area)
+    return regions
         
-def floodfillRegion(matrix, start):
+        
+def floodFillRegion(matrix, start):
     floodingValue = matrix[start[1]][start[0]]
     fillQue = [start]
     flooded = set()
@@ -30,46 +49,32 @@ def getRegionPerimeter(region):
             if next not in region:
                 count += 1
     return count
-            
-        
-def getRegions(farm_map):
-    regions = []
-    checked_coords = set()
-    for y, row in enumerate(farm_map):
-        for x, plant_type in enumerate(row):
-            if (x, y) in checked_coords: 
-                continue
-            area = floodfillRegion(farm_map, (x, y))
-            regions.append((plant_type, area))
-            checked_coords.update(area)
-    return regions
 
 
 def countSides(region):    
-    # looking vector, moving vector
-    def countWalls(lV, mV, region_adjacents, region):
+    def countWalls(observationVector, moveVector, region_adjacents, region):
         walls = 0
         checked = set()
         for current in region_adjacents:
             if current in checked:
                 continue
             checked.add(current)
-            lookingAt = (current[0]+lV[0], current[1]+(lV[1]))
+            lookingAt = applyVector(current, observationVector)
             
             # check if there is a wall in direction we are "looking at"
             if lookingAt not in region: continue
-            
             walls+=1
+            
             # mark all adjacents to same wall as checked 
             # by "walking" next to the wall in both directions and "looking at" it
-            for move_dx, move_dy in [(mV[0]*i, mV[1]*i) for i in [-1, 1] ]:
+            for moveVector in [(moveVector[0]*i, moveVector[1]*i) for i in [-1, 1] ]:
                 next = current
                 while True:
-                    next = (next[0]-move_dx, next[1]-move_dy)
+                    next = applyVector(next, moveVector)
                     if next in region:
                         # if walked into another wall it means that current one ended
                         break
-                    lookingAt = (next[0]+lV[0], next[1]+(lV[1]))
+                    lookingAt = applyVector(next, observationVector)
                     checked.add(next)
                     if lookingAt not in region:
                         # if wall "disapeared" that means it ended
@@ -78,9 +83,9 @@ def countSides(region):
         return walls
     
     region_adjacents = set()
-    for rx, ry in region:
-        for dx, dy in adjacency_list:
-            next = (rx+dx, ry+dy)
+    for point in region:
+        for vector in adjacency_list:
+            next = applyVector(point, vector)
             if next not in region:
                 region_adjacents.add(next)  
                 
