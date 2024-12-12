@@ -51,49 +51,51 @@ def getRegionPerimeter(region):
     return count
 
 
-def countSides(region):    
-    def countWalls(observationVector, moveVector, region_adjacents, region):
-        walls = 0
-        checked = set()
-        for current in region_adjacents:
-            if current in checked:
-                continue
-            checked.add(current)
-            lookingAt = applyVector(current, observationVector)
-            
-            # check if there is a wall in direction we are "looking at"
-            if lookingAt not in region: continue
-            walls+=1
-            
-            # mark all adjacents to same wall as checked 
-            # by "walking" next to the wall in both directions and "looking at" it
-            for moveVector in [(moveVector[0]*i, moveVector[1]*i) for i in [-1, 1] ]:
-                next = current
-                while True:
-                    next = applyVector(next, moveVector)
-                    if next in region:
-                        # if walked into another wall it means that current one ended
-                        break
-                    lookingAt = applyVector(next, observationVector)
-                    checked.add(next)
-                    if lookingAt not in region:
-                        # if wall "disapeared" that means it ended
-                        break
-                next = current
-        return walls
-    
+def getRegionAdjacents(region):
     region_adjacents = set()
     for point in region:
         for vector in adjacency_list:
             next = applyVector(point, vector)
             if next not in region:
-                region_adjacents.add(next)  
-                
+                region_adjacents.add(next)
+    return region_adjacents
+
+
+def countWallsInDirection(observationVector, moveVector, region_adjacents, region):
     walls = 0
-    walls += countWalls((0,1), (1,0), region_adjacents, region) #look down, go horizontal
-    walls += countWalls((0,-1), (1,0), region_adjacents, region) #look up, go horizontal
-    walls += countWalls((-1,0), (0,1), region_adjacents, region) #look left, go vertical
-    walls += countWalls((1,0), (0,1), region_adjacents, region) #look right, go vertical
+    adjacentsToCheck = region_adjacents.copy()
+    while(len(adjacentsToCheck)>0):
+        current = adjacentsToCheck.pop()
+        lookingAt = applyVector(current, observationVector)
+        
+        # check if there is a wall in direction we are "looking at"
+        if lookingAt not in region: continue
+        walls+=1
+        
+        # mark all adjacents to same wall as checked 
+        # by "walking" next to the wall in both directions and "looking at" it
+        for moveVector in [((moveVector[0]*i), moveVector[1]*i) for i in [-1, 1] ]:
+            next = current
+            while True:
+                next = applyVector(next, moveVector)
+                if next in region:
+                    # if walked into another wall it means that current one ended
+                    break
+                lookingAt = applyVector(next, observationVector)
+                adjacentsToCheck.discard(next)
+                if lookingAt not in region:
+                    # if wall "disapeared" that means it ended
+                    break
+    return walls
+    
+
+def countAllWalls(region):
+    region_adjacents = getRegionAdjacents(region)                    
+    walls = 0
+    walls += countWallsInDirection((0,1), (1,0), region_adjacents, region) #look down, go horizontal
+    walls += countWallsInDirection((0,-1), (1,0), region_adjacents, region) #look up, go horizontal
+    walls += countWallsInDirection((-1,0), (0,1), region_adjacents, region) #look left, go vertical
+    walls += countWallsInDirection((1,0), (0,1), region_adjacents, region) #look right, go vertical
     return walls
 
 
@@ -118,7 +120,7 @@ def main(input_file):
         price1 += getRegionPerimeter(region) * area
         
         # pt 2
-        price2 += countSides(region) * area
+        price2 += countAllWalls(region) * area
     
     print("pt1:", price1)
     print("pt2:", price2)
