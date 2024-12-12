@@ -1,40 +1,32 @@
 #!/usr/bin/python3
 """AOC 12th day."""
 import sys
+
+adjacency_list = [ (0,1), (0,-1), (-1,0), (1,0)]
         
-def floodfillRegion(matrix, start, symbol):
-    i = 0
+def floodfillRegion(matrix, start):
+    floodingValue = matrix[start[1]][start[0]]
     fillQue = [start]
-    queueLength = 1
-    checked = set()
+    flooded = set()
     
-    maxRow = len(matrix)
-    maxCol = len(matrix[0])
+    oob = lambda x, y:  x < 0 or x >= len(matrix[0]) or y < 0 or y >= len(matrix)
     
-    while(i < queueLength):
-        r = fillQue[i][1]
-        c = fillQue[i][0]
-        i += 1
-        
-        if r < 0 or r >= maxRow or c < 0 or c >= maxCol:
+    while(len(fillQue)>0):
+        x, y = fillQue.pop(0)
+        if oob(x, y):
             continue
-        
-        if matrix[r][c] == symbol and (c, r) not in checked:
-            checked.add((c, r))           
-            fillQue.append((c, r + 1))
-            fillQue.append((c + 1, r))
-            fillQue.append((c, r -1))
-            fillQue.append((c -1, r))
-            queueLength += 4
-    return checked
+        if matrix[y][x] == floodingValue and (x, y) not in flooded:
+            flooded.add((x, y))
+            for dx, dy in adjacency_list:
+                fillQue.append((x + dx, y + dy))           
+    return flooded
 
         
 def getRegionPerimeter(region):
-    vectors = [ (0,1), (0,-1), (-1,0), (1,0)]
     count = 0
-    for r in region:
-        for v in vectors:
-            next = (r[0]+v[0], r[1]+v[1])
+    for rx, ry in region:
+        for dx, dy in adjacency_list:
+            next = (rx + dx, ry + dy)
             if next not in region:
                 count += 1
     return count
@@ -42,65 +34,61 @@ def getRegionPerimeter(region):
         
 def getRegions(farm_map):
     regions = []
-    mapped_coords = set()
-    for coord_y, row in enumerate(farm_map):
-        for coord_x, plant_type in enumerate(row):
-            if (coord_x, coord_y) in mapped_coords: 
+    checked_coords = set()
+    for y, row in enumerate(farm_map):
+        for x, plant_type in enumerate(row):
+            if (x, y) in checked_coords: 
                 continue
-            area = floodfillRegion(farm_map, (coord_x, coord_y), plant_type)
+            area = floodfillRegion(farm_map, (x, y))
             regions.append((plant_type, area))
-            mapped_coords.update(area)
+            checked_coords.update(area)
     return regions
 
 
-def countSides(region):
-    vectors = [(0,1), (0,-1), (-1,0), (1,0)]
-    regionOutsides = set()
-    for p in region:
-        for v in vectors:
-            next = (p[0]+v[0], p[1]+v[1])
-            if next not in region:
-                regionOutsides.add(next)  
-    
+def countSides(region):    
     # looking vector, moving vector
-    def countWalls(lV, mV, regionOutsides, region):
+    def countWalls(lV, mV, region_adjacents, region):
         walls = 0
         checked = set()
-        for current in regionOutsides:
+        for current in region_adjacents:
             if current in checked:
                 continue
             checked.add(current)
             lookingAt = (current[0]+lV[0], current[1]+(lV[1]))
-            if lookingAt not in region:
-                continue
+            
+            # check if there is a wall in direction we are "looking at"
+            if lookingAt not in region: continue
             
             walls+=1
-            
-            next = current
-            while True:
-                next = (next[0]-(mV[0]), next[1]-(mV[1]))
-                if next in region:
-                    break
-                lookingAt = (next[0]+lV[0], next[1]+(lV[1]))
-                checked.add(next)
-                if lookingAt not in region:
-                    break
-            next = current
-            while True:
-                next = (next[0]+(mV[0]), next[1]+(mV[1]))
-                if next in region:
-                    break
-                lookingAt = (next[0]+lV[0], next[1]+(lV[1]))
-                checked.add(next)
-                if lookingAt not in region:
-                    break
+            # mark all adjacents to same wall as checked 
+            # by "walking" next to the wall in both directions and "looking at" it
+            for move_dx, move_dy in [(mV[0]*i, mV[1]*i) for i in [-1, 1] ]:
+                next = current
+                while True:
+                    next = (next[0]-move_dx, next[1]-move_dy)
+                    if next in region:
+                        # if walked into another wall it means that current one ended
+                        break
+                    lookingAt = (next[0]+lV[0], next[1]+(lV[1]))
+                    checked.add(next)
+                    if lookingAt not in region:
+                        # if wall "disapeared" that means it ended
+                        break
+                next = current
         return walls
+    
+    region_adjacents = set()
+    for rx, ry in region:
+        for dx, dy in adjacency_list:
+            next = (rx+dx, ry+dy)
+            if next not in region:
+                region_adjacents.add(next)  
                 
     walls = 0
-    walls += countWalls((0,1), (1,0), regionOutsides, region) #look down, go horizontal
-    walls += countWalls((0,-1), (1,0), regionOutsides, region) #look up, go horizontal
-    walls += countWalls((-1,0), (0,1), regionOutsides, region) #look left, go vertical
-    walls += countWalls((1,0), (0,1), regionOutsides, region) #look right, go vertical
+    walls += countWalls((0,1), (1,0), region_adjacents, region) #look down, go horizontal
+    walls += countWalls((0,-1), (1,0), region_adjacents, region) #look up, go horizontal
+    walls += countWalls((-1,0), (0,1), region_adjacents, region) #look left, go vertical
+    walls += countWalls((1,0), (0,1), region_adjacents, region) #look right, go vertical
     return walls
 
 
