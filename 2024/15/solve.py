@@ -50,16 +50,10 @@ class Object:
         self.movable = movable
     
 class Robot:
-    def __init__(self, p: Vec2D, v: Vec2D):
+    def __init__(self, p: Vec2D):
         self.p = p
-        self.v = v
-    def getNextPos(self):
-        return self.p.copy() + self.v
-    def move(self):
-        self.p += self.v    
 
 def printWarehouse(objects, robot, size):
-    toPrint = objects
     for y in range(size.h):
         string = ""
         for x in range(size.w):
@@ -67,7 +61,7 @@ def printWarehouse(objects, robot, size):
                 string += "@"
                 continue
             
-            o = next((o for o in toPrint if o.p == Vec2D(x,y)), None)
+            o = next((o for o in objects if o.p == Vec2D(x,y)), None)
             if o is None:
                 string += "."
             elif o.movable:
@@ -93,19 +87,14 @@ def moveObject(object, objects, vector):
 def main(input_file):
     warehouse_raw, moves_raw = input_file.read().split("\n\n")
     moves_raw = moves_raw.replace("\n", "")
+    warehouse_raw = warehouse_raw.splitlines()
+    robot_at = Robot(Vec2D(0,0))
     
-    robot_at = Robot(Vec2D(0,0),Vec2D(0,0))
-    
-    warehouse = []
     objects = []
-    for coord_y, row in enumerate(warehouse_raw.splitlines()):
-        warehouse.append([])
+    for coord_y, row in enumerate(warehouse_raw):
         for coord_x, value in enumerate(row):
             if value == "@":
-                robot_at = Robot(Vec2D(coord_x,coord_y),Vec2D(0,0))
-                warehouse[coord_y].append(".")
-            else: 
-                warehouse[coord_y].append(value)
+                robot_at = Robot(Vec2D(coord_x,coord_y))
             if value == "#":
                 objects.append(Object(Vec2D(coord_x, coord_y), False))
             if value == "O":
@@ -122,8 +111,8 @@ def main(input_file):
         else:
             robot_at.p = next_p
             
-    # warehouse_size = Size(len(warehouse[0]), len(warehouse))        
-    # printWarehouse(objects, robot_at, warehouse_size)
+    warehouse_size = Size(len(warehouse_raw[0]), len(warehouse_raw))        
+    printWarehouse(objects, robot_at, warehouse_size)
 
     pt1 = sum(map(lambda o: o.p.y * 100 + o.p.x , filter(lambda o: o.movable, objects)))
     print(pt1)

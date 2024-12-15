@@ -157,7 +157,7 @@ def main(input_file):
         
         # print(f"\nmove {move_raw} {i}")
         # printWarehouse(objects, robot_at, size)
-        None # debug
+        None # for breakpoint
             
     result = sum(map(lambda o: o.coords[0].y * 100 + o.coords[0].x , filter(lambda o: o.movable, objects)))
     print(result)
