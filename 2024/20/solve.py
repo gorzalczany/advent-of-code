@@ -30,19 +30,21 @@ class Vec2D:
     def __eq__(self, other):
         if isinstance(other, Vec2D):
             return self.x == other.x and self.y == other.y
+        
+    def taxicabDistance(self, other):
+        return abs(self.x-other.x) + abs(self.y-other.y)
  
     
 class RaceTrack:
     
     vectors = [(0,1), (0,-1), (-1,0), (1,0)]
-    wall_to_skip = None
     
-    def __init__(self, size, walls):
+    def __init__(self, size, walls, track):
         self.size = size
         self.walls = walls
+        self.track = list(track)
       
-      
-    def shortest_path(self, start, goal, cheat=False):
+    def getShortestAndCheats(self, start, goal, cheat_range):
         queue = Queue()
         queue.put((start,0))
         
@@ -68,21 +70,27 @@ class RaceTrack:
                         next_node not in visited,
                         next_node.x >= 0 and next_node.y >= 0,
                         next_node.x < self.size and next_node.y < self.size
-                    ]) or next_node == self.wall_to_skip: 
+                    ]): 
                     queue.put((next_node, distance+1))
-                    
-                cheat_node_end = node + Vec2D(dx, dy).scale(2)
-                if all([
-                        next_node in self.walls,
-                        cheat,
-                        cheat_node_end not in self.walls,
-                        cheat_node_end.x >= 0 and cheat_node_end.y >= 0,
-                        cheat_node_end.x < self.size and cheat_node_end.y < self.size
-                    ]):
-                    cheat_nodes.add((next_node, cheat_node_end, distance+2))
+                
+                cheat_filter = lambda cheat_end: all([
+                            cheat_end != next_node,
+                            cheat_end not in self.walls,
+                            cheat_end.x >= 0 and cheat_end.y >= 0,
+                            cheat_end.x < self.size and cheat_end.y < self.size
+                        ])
+                potential_cheats = self.getCheets(node, cheat_range)
+                cheats_ends = list(filter(cheat_filter, potential_cheats))
+                cheats = [(node, cheat_end) for cheat_end in cheats_ends]
+                for cheat in cheats:
+                    if (cheat[1], cheat[0]) not in cheat_nodes:
+                        cheat_nodes.add(cheat)                
                 
         return min_distance, cheat_nodes
     
+    def getCheets(self, from_point, max_distance):
+        return [point for point in self.track if 1 < point.taxicabDistance(from_point) <= max_distance]
+        
     
     def getDistanceToEveryOtherPoint(self, start):
         queue = Queue()
@@ -107,53 +115,70 @@ class RaceTrack:
                         next_node not in visited,
                         next_node.x >= 0 and next_node.y >= 0,
                         next_node.x < self.size and next_node.y < self.size
-                    ]) or next_node == self.wall_to_skip: 
+                    ]): 
                     queue.put((next_node, distance+1))
                     distances[next_node] = distance+1                
         return distances
 
+def printCheats(counter: Counter, prefix, break_down = False):
+    items = list(counter.items())
+    if break_down:
+        items.sort(key=lambda item: item[0])
+        for dist, c in items:
+            print(f"{c} cheats saves: {dist}")        
+    print(prefix, "cheats:", sum(counter.values()))
 
 def main(input_file, isTest):
     lines =  input_file.read().splitlines()
 
-    maze_graph = []
-    maze_walls = set()
+    track_map = []
+    track_walls = set()
+    track_coords = set()
     start = Vec2D(0,0)
     stop = Vec2D(0,0)
     for coord_y, row in enumerate(lines):
-        maze_graph.append(["."]*len(row))
+        track_map.append(["."]*len(row))
         for coord_x, value in enumerate(row):
             vec = Vec2D(coord_x, coord_y)
+            if value != "#":
+                track_coords.add(vec)
             if value == "S":
                 start = vec
             elif value == "E":
                 stop = vec
             elif value == "#":
-                maze_walls.add(vec)
-                maze_graph[coord_y][coord_x] = "#"
+                track_walls.add(vec)
+                track_map[coord_y][coord_x] = "#"
     
-    track = RaceTrack(len(maze_graph), maze_walls)
-    min_distance, cheat_nodes = track.shortest_path(start, stop, cheat=True)
-
+    track = RaceTrack(len(track_map), track_walls, track_coords)
+    
     distances_to_end = track.getDistanceToEveryOtherPoint(stop)
-    start_to_end_distance = min_distance
     
     # pt 1
     counter = Counter()
-    for cheat_s, cheat_e, traveled_to_cheat in cheat_nodes:
-        cheat_to_end = distances_to_end[cheat_e]
-        start_to_cheat = traveled_to_cheat
-        diff = start_to_end_distance - (start_to_cheat + cheat_to_end)
-        if diff >= 0 if isTest else 100:
-            counter[diff] += 1
+    min_distance, cheat_nodes = track.getShortestAndCheats(start, stop, cheat_range=2)
+    for cheat_s, cheat_e in cheat_nodes:
+        cheat_start_to_end = distances_to_end[cheat_e]
+        cheat_end_to_end = distances_to_end[cheat_s]
+        diff = abs(cheat_start_to_end - cheat_end_to_end) - cheat_s.taxicabDistance(cheat_e)
+        if diff >= (0 if isTest else 100):
+            counter[diff]+=1  
+    printCheats(counter, "pt1")
+            
+    # pt 2
+    counter = Counter()
+    min_distance, cheat_nodes = track.getShortestAndCheats(start, stop, cheat_range=20)
+    for cheat_s, cheat_e in cheat_nodes:
+        cheat_start_to_end = distances_to_end[cheat_e]
+        cheat_end_to_end = distances_to_end[cheat_s]
+        distance = cheat_s.taxicabDistance(cheat_e)
         
-    items = list(counter.items())
-    items.sort(key=lambda item: item[0])
-    for dist, c in items:
-        print(f"{c} cheats saves: {dist}")        
-    print("cheats:", sum(counter.values()))
-    
+        diff = abs(cheat_start_to_end - cheat_end_to_end) - distance
+        if diff >= (50 if isTest else 100):
+            counter[diff] += 1
+    printCheats(counter, "pt2")   
 
+    
 if __name__ == '__main__':
     env_test_run = sys.argv[-1] == '-t'
     main(open('01.txt' if not env_test_run else '00.txt', 'r'), env_test_run)
