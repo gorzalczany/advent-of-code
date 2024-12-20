@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """AOC 15th day."""
 import sys
+import time
 
 class Vec2D:
     def __init__(self, x, y):
@@ -59,8 +60,18 @@ class Object:
 class Robot:
     def __init__(self, p: Vec2D):
         self.p = p
+        
+# CURSOR ANSI ESCAPE PATTERNS
+CURSOR_UP = '\033[1A'  # moves cursor up one line
+CURSOR_DOWN = '\033[1B'  # moves cursor up one line
+CURSOR_RESET = '\033[u'  # resets the cursor
+CURSOR_OFF = '\033[?25l'  # makes cursor invisible
+CURSOR_ON = '\033[?25h'# makes cursor visible
+CURSOR_SAVE_POS = '\033[s'  # saves cursor position
+CURSOR_RESTORE_POS = '\033[u'# returns cursor to last saved position
 
 def printWarehouse(objects, robot, size):
+    sys.stdout.flush()
     for o in objects:
         o.printed = False
     for y in range(size.h):
@@ -68,23 +79,26 @@ def printWarehouse(objects, robot, size):
         x = 0
         while x < size.w * 2:
             if robot.p ==  Vec2D(x,y):
-                string += "@"
+                string += "🤖"
                 x+=1
                 continue
             
             searchVector = Vec2D(x,y)
             o = next((x for x in objects if any(coord == searchVector for coord in x.coords) and not x.printed), None)
             if o is None:
-                string += "."
+                string += "  "
                 x+=1
                 continue
             elif o.movable:
-                string += "[]"
+                string += "⬜⬜"
             else: 
-                string += "##"
+                string += "🟥🟥"
             o.printed = True
             x+=2
-        print(string)
+        for char in string: sys.stdout.write(char)
+        sys.stdout.write('\n')
+    sys.stdout.write(CURSOR_UP*size.h)
+    time.sleep(1/10)
 
 
 def getAllNextObjects(object, objects, vector):
@@ -143,7 +157,7 @@ def main(input_file):
 
     # print("initial")
     # printWarehouse(objects, robot_at, size)
-
+    sys.stdout.write(CURSOR_OFF)
     for i, move_raw in enumerate(moves_raw):
         move = vectors[move_raw]
         next_p = robot_at.p.copy() + move
@@ -155,10 +169,11 @@ def main(input_file):
         else:
             robot_at.p = next_p
         
-        # print(f"\nmove {move_raw} {i}")
-        # printWarehouse(objects, robot_at, size)
+        printWarehouse(objects, robot_at, size)
         None # for breakpoint
             
+    sys.stdout.write(CURSOR_RESTORE_POS)
+    sys.stdout.write(CURSOR_ON)
     result = sum(map(lambda o: o.coords[0].y * 100 + o.coords[0].x , filter(lambda o: o.movable, objects)))
     print(result)
     
