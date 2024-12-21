@@ -3,7 +3,8 @@
 
 import sys
 from queue import Queue
-from collections import Counter
+from collections import Counter, defaultdict
+from functools import cache
 import re
 
 class Vec2D:
@@ -34,53 +35,60 @@ class Vec2D:
             return self.x == other.x and self.y == other.y
 
 class Keyboard:
-    vectors = {
+    moves = {
         "^": Vec2D(0, -1),
         ">": Vec2D(1, 0),
         "v": Vec2D(0, 1),
         "<": Vec2D(-1, 0)
     }
     
-    def __init__(self, key_pad, current_position_symbol = "A"):
+    def __init__(self, key_pad, starting_position_symbol = "A"):
         self.key_pad = {k: Vec2D(*v) for k, v in key_pad.items()}
-        self.current_position = self.key_pad[current_position_symbol]
+        self.starting_postion = self.key_pad[starting_position_symbol]
         
-    def pressCode(self, code: str) -> str:
-        sequence = ""
+    @cache
+    def getSequencesForCode(self, code: str) -> str:
+        sequences = set()
+        queue = Queue()
+        queue.put((code, self.starting_postion, ""))
         
-        for key in code:
-            key_sequence, moved = self._pressKey(key)
-            self.current_position = self.key_pad[key] if moved else self.current_position
-            sequence += key_sequence
-            
-        return sequence
+        while not queue.empty():
+            code, last_known_position, sequence = queue.get()
+            code, key = code[1:], code[0]
+            key_sequences, moved = self._pressKey(key, last_known_position)
+            last_known_position = self.key_pad[key] if moved else last_known_position
+            for ks in set(key_sequences):
+                s = sequence + ks
+                if len(code) != 0:
+                    queue.put((code, last_known_position, s))
+                else:
+                    sequences.add(s)
+        shortest = min(sequences, key=len)           
+        return [sequence for sequence in sequences if len(sequence)==len(shortest)]
     
-    def _pressKey(self, key: str) -> str:
-        start = self.current_position
+    @cache
+    def _pressKey(self, key: str, last_known_position) -> str:
+        start = last_known_position
         target = self.key_pad[key]
          
         if start == target:
             return "A", False 	
           
         queue = Queue()
-        queue.put((start, ""))
-        visited = set()
-
+        queue.put((start, "", [start]))
         sequences = []
         
         while not queue.empty():
-            node, sequence = queue.get()
-            if node in visited: continue
-            visited.add(node)
-            for move_symbol, vector in self.vectors.items():
+            node, sequence, path = queue.get()
+            for move_symbol, vector in self.moves.items():
                 next_node = node + vector
                 if next_node == target:
                     sequences.append(sequence + move_symbol + "A")
-                if next_node in self.key_pad.values() and next_node not in visited:
-                    queue.put((next_node, sequence + move_symbol))
-                    
-        score = lambda x: len(x) - len(re.findall(r"(.)\1", x)) - len(re.findall(r"(.)\1+", x))
-        return min(sequences, key=score), True
+                elif next_node in self.key_pad.values() and next_node not in path:
+                    queue.put((next_node, sequence + move_symbol, path + [next_node]))
+        
+        shortest = min(sequences, key=len)           
+        return [sequence for sequence in sequences if len(sequence)==len(shortest)], True
             
 
 def main(input_file, isTest):
@@ -98,28 +106,36 @@ def main(input_file, isTest):
                         "0": (1,3),     "A": (2,3),
     }
     
-    complexities = []
+    complexities = {}
     for code in codes:
-        # print(code) 
-        last_numeric_keyboard = Keyboard(key_pad=numeric_key_pad)
-        sequence = last_numeric_keyboard.pressCode(code)
-        # print(sequence)
-
-        remote_in_radiation = Keyboard(key_pad=directional_key_pad)
-        sequence = remote_in_radiation.pressCode(sequence)
-        # print(sequence)
-
-        remote_in_freezing = Keyboard(key_pad=directional_key_pad)
-        sequence = remote_in_freezing.pressCode(sequence)
-        # print(sequence)
-
-        complexity = len(sequence) * int(code[:-1])
-        complexities.append(complexity)
-        print(f"{len(sequence)} * {int(code[:-1])}")
+        print(code) 
+        numeric_keyboard = Keyboard(key_pad=numeric_key_pad)
+        sequences = set(numeric_keyboard.getSequencesForCode(code))
+        # print(sequences)
         
-    print(sum(complexities))
-        
-    # // 295616 - to high
+        sequences2 = set()
+        directional_keyboard = Keyboard(key_pad=directional_key_pad)
+        for sequence in sequences:
+            sequences2.update(directional_keyboard.getSequencesForCode(sequence))
+            
+        # shortest = min(sequences2, key=len)
+        # sequences2 = set([sequence for sequence in sequences2 if len(sequence)<=len(shortest)])
+        # print()
+        # print(sequences2)
+            
+        sequences3 = set()
+        directional_keyboard = Keyboard(key_pad=directional_key_pad)
+        for sequence in sequences2:
+            sequences3.update(directional_keyboard.getSequencesForCode(sequence))
+        # print(sequences3)
+        shortest = min(sequences3, key=len)
+        sequences3 = set([sequence for sequence in sequences3 if len(sequence)<=len(shortest)])
+
+        complexities[code] = min([len(sequence) * int(code[:-1]) for sequence in sequences3])
+    print(complexities)        
+    result = (sum(complexities.values()))
+    print(result)
+    assert result<281594 #p1
     
 if __name__ == '__main__':
     env_test_run = sys.argv[-1] == '-t'
