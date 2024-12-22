@@ -2,141 +2,75 @@
 """AOC 21th day."""
 
 import sys
-from queue import Queue
-from collections import Counter, defaultdict
 from functools import cache
-import re
 
-class Vec2D:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def __add__(self, other):
-        return Vec2D(self.x + other.x, self.y + other.y)
-    
-    def scale(self, scalar):
-        return Vec2D(self.x * scalar, self.y * scalar)   
-    
-    def copy(self):
-        return Vec2D(self.x, self.y)
-    
-    def __str__(self):
-        return f"({self.x},{self.y})"
-    
-    def __repr__(self):
-        return f"({self.x},{self.y})"
-    
-    def __hash__(self):
-        return hash(f"{self.x}-{self.y}")
-    
-    def __eq__(self, other):
-        if isinstance(other, Vec2D):
-            return self.x == other.x and self.y == other.y
-
-class Keyboard:
+class Keyboard:      
     moves = {
-        "^": Vec2D(0, -1),
-        ">": Vec2D(1, 0),
-        "v": Vec2D(0, 1),
-        "<": Vec2D(-1, 0)
+        "^": (0, -1),"v": (0, 1),
+        "<": (-1, 0),">": (1, 0),
     }
-    
-    def __init__(self, key_pad, starting_position_symbol = "A"):
-        self.key_pad = {k: Vec2D(*v) for k, v in key_pad.items()}
-        self.starting_postion = self.key_pad[starting_position_symbol]
-        
-    @cache
-    def getSequencesForCode(self, code: str) -> str:
-        sequences = set()
-        queue = Queue()
-        queue.put((code, self.starting_postion, ""))
-        
-        while not queue.empty():
-            code, last_known_position, sequence = queue.get()
-            code, key = code[1:], code[0]
-            key_sequences, moved = self._pressKey(key, last_known_position)
-            last_known_position = self.key_pad[key] if moved else last_known_position
-            for ks in set(key_sequences):
-                s = sequence + ks
-                if len(code) != 0:
-                    queue.put((code, last_known_position, s))
-                else:
-                    sequences.add(s)
-        shortest = min(sequences, key=len)           
-        return [sequence for sequence in sequences if len(sequence)==len(shortest)]
-    
-    @cache
-    def _pressKey(self, key: str, last_known_position) -> str:
-        start = last_known_position
-        target = self.key_pad[key]
-         
-        if start == target:
-            return "A", False 	
-          
-        queue = Queue()
-        queue.put((start, "", [start]))
-        sequences = []
-        
-        while not queue.empty():
-            node, sequence, path = queue.get()
-            for move_symbol, vector in self.moves.items():
-                next_node = node + vector
-                if next_node == target:
-                    sequences.append(sequence + move_symbol + "A")
-                elif next_node in self.key_pad.values() and next_node not in path:
-                    queue.put((next_node, sequence + move_symbol, path + [next_node]))
-        
-        shortest = min(sequences, key=len)           
-        return [sequence for sequence in sequences if len(sequence)==len(shortest)], True
-            
 
-def main(input_file, isTest):
-    lines =  input_file.read()
-    codes = lines.splitlines()
-
-    directional_key_pad = {
+    d_pad = {
                         "^": (1,0),     "A": (2,0),
         "<": (0,1),     "v": (1,1),     ">": (2,1)
     }
-    numeric_key_pad = {
+
+    num_pad = {
         "7": (0,0),     "8": (1,0),     "9": (2,0),
         "4": (0,1),     "5": (1,1),     "6": (2,1),
         "1": (0,2),     "2": (1,2),     "3": (2,2),
                         "0": (1,3),     "A": (2,3),
     }
-    
-    complexities = {}
-    for code in codes:
-        print(code) 
-        numeric_keyboard = Keyboard(key_pad=numeric_key_pad)
-        sequences = set(numeric_keyboard.getSequencesForCode(code))
-        # print(sequences)
-        
-        sequences2 = set()
-        directional_keyboard = Keyboard(key_pad=directional_key_pad)
-        for sequence in sequences:
-            sequences2.update(directional_keyboard.getSequencesForCode(sequence))
-            
-        # shortest = min(sequences2, key=len)
-        # sequences2 = set([sequence for sequence in sequences2 if len(sequence)<=len(shortest)])
-        # print()
-        # print(sequences2)
-            
-        sequences3 = set()
-        directional_keyboard = Keyboard(key_pad=directional_key_pad)
-        for sequence in sequences2:
-            sequences3.update(directional_keyboard.getSequencesForCode(sequence))
-        # print(sequences3)
-        shortest = min(sequences3, key=len)
-        sequences3 = set([sequence for sequence in sequences3 if len(sequence)<=len(shortest)])
 
-        complexities[code] = min([len(sequence) * int(code[:-1]) for sequence in sequences3])
-    print(complexities)        
-    result = (sum(complexities.values()))
-    print(result)
-    assert result<281594 #p1
+
+def getSequencesToPressKey(prevKey, nextKey, key_pad):
+    if prevKey == nextKey:
+        return ["A"]
+
+    start, target = key_pad[prevKey], key_pad[nextKey]
+    queue = [(start, "", [start])]
+    sequences = []
+
+    while len(queue) > 0:
+        node, sequence, path = queue.pop(0)
+        for move_symbol, (dx, dy) in Keyboard.moves.items():
+            next_node = (node[0] + dx, node[1] + dy)
+            seq_with_move = sequence + move_symbol
+            if next_node == target:
+                if not sequences or len(sequences[0]) == len(seq_with_move):
+                    sequences.append(seq_with_move)
+            elif next_node in key_pad.values() and next_node not in path:
+                queue.append((next_node, seq_with_move, path + [next_node]))
+    return [sequence + "A" for sequence in sequences]
+
+
+@cache
+def getLengthOfCodePressingSequences(code, depth):
+    if depth == 1:
+        return len(code)
+
+    key_pad = Keyboard.num_pad if any(map(str.isdigit, code)) else Keyboard.d_pad
+
+    length = 0
+    for prev_key, next_key in zip("A" + code, code):
+        shortest_paths = getSequencesToPressKey(prev_key, next_key, key_pad)
+        length += min( getLengthOfCodePressingSequences(sp, depth - 1) for sp in shortest_paths)
+    return length
+
+
+def get_code_complexity(code, middle_robbots):
+    length_of_pressing = getLengthOfCodePressingSequences(code, 1 + middle_robbots + 1)
+    return length_of_pressing * int(code[:-1])
+
+
+def main(input_file, isTest):
+    lines = input_file.read()
+    codes = lines.splitlines()
     
-if __name__ == '__main__':
-    env_test_run = sys.argv[-1] == '-t'
-    main(open('01.txt' if not env_test_run else '00.txt', 'r'), env_test_run)
+    print("pt1:", sum(get_code_complexity(code, middle_robbots=2) for code in codes))
+    print("pt2:", sum(get_code_complexity(code, middle_robbots=25) for code in codes))
+
+
+if __name__ == "__main__":
+    env_test_run = sys.argv[-1] == "-t"
+    main(open("01.txt" if not env_test_run else "00.txt", "r"), env_test_run)
