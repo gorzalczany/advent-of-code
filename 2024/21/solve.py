@@ -4,18 +4,21 @@
 import sys
 from functools import cache
 
-class Keyboard:      
+class Keyboard:
+    Vector = tuple[int, int]
+    KeyPad = dict[str: Vector]
+
     moves = {
         "^": (0, -1),"v": (0, 1),
         "<": (-1, 0),">": (1, 0),
     }
 
-    d_pad = {
+    d_pad: KeyPad = {
                         "^": (1,0),     "A": (2,0),
         "<": (0,1),     "v": (1,1),     ">": (2,1)
     }
 
-    num_pad = {
+    num_pad: KeyPad = {
         "7": (0,0),     "8": (1,0),     "9": (2,0),
         "4": (0,1),     "5": (1,1),     "6": (2,1),
         "1": (0,2),     "2": (1,2),     "3": (2,2),
@@ -23,7 +26,7 @@ class Keyboard:
     }
 
 
-def getSequencesToPressKey(prevKey, nextKey, key_pad):
+def getSequencesToPressKey(prevKey: str, nextKey: str, key_pad:Keyboard.KeyPad) -> list[str]:
     if prevKey == nextKey:
         return ["A"]
 
@@ -45,7 +48,7 @@ def getSequencesToPressKey(prevKey, nextKey, key_pad):
 
 
 @cache
-def getLengthOfCodePressingSequences(code, depth):
+def getLengthOfCodePressingSequences(code: str, depth: int) -> int:
     if depth == 1:
         return len(code)
 
