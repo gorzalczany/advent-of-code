@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """AOC 23th day."""
 import sys
+from collections import defaultdict
 
 class LanGroup:
     def __init__(self, members):
@@ -27,34 +28,19 @@ def main(input_file, isTest):
         a, b = line.split("-")
         connections.append((a,b))
      
-    lan_dict = {}
+    lan_dict = defaultdict(set)
     for a,b in connections:
-        if a in lan_dict:
-            lan_dict[a].add(b)
-        else:
-            lan_dict[a] = set([b]) 
-        if b in lan_dict:
-            lan_dict[b].add(a)  
-        else:
-            lan_dict[b] = set([a])
+        lan_dict[a].add(b)
+        lan_dict[b].add(a)  
 
     lan_parties = set()
     for me, mine in lan_dict.items():
         for other in mine:
-            potential_commons = lan_dict[other]
-            for common in potential_commons:
-                if common == me or common == other:
-                    continue
-                if common in mine:
+            for common in lan_dict[other]:
+                if common in mine and common not in [me, other]:
                     lan_parties.add(LanGroup([me, other, common]))  
       
-    counter = 0  
-    for lan_group in lan_parties:
-        for member in lan_group.members:
-            if member.startswith("t"):
-                counter += 1
-                break            
-    print("pt1:", counter)
+    print("pt1:", len([party for party in lan_parties if any(member.startswith("t") for member in party.members)]))
     
     # pt2:
     lan_parties = set()
