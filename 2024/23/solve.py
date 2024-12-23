@@ -60,23 +60,14 @@ def main(input_file, isTest):
     lan_parties = set()
     for me, mine in lan_dict.items():
         for other in mine:
-            potential_commons = lan_dict[other]
-            commons = [me, other]
-            for common in potential_commons:
-                if common == me or common == other:
-                    continue
-                if common in mine:
-                    commons.append(common)
-            lan_parties.add(LanGroup(commons))
+            lan_parties.add(LanGroup([me, other]+[x for x in lan_dict[other] if x in mine]))
             
     def areMembersInterconnected(lan_party):
         members = lan_party.members
-        for member in members:
-            my_connections = lan_dict[member]
+        for me in members:
+            my_connections = lan_dict[me]
             for other in members:
-                if other not in my_connections:
-                    if other == member:
-                        continue
+                if other not in my_connections and other != me:
                     return False
         return True
     
