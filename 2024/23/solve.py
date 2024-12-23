@@ -3,25 +3,9 @@
 import sys
 from collections import defaultdict
 
-class LanGroup:
-    def __init__(self, members):
-        self.members = members
-        self.members.sort()
-   
-    def __hash__(self):
-        return hash(",".join(self.members))
-    
-    def __eq__(self, other):
-        return self.members == other.members
-    
-    def __str__(self):
-        return str(self.members)
-    
-    def __repr__(self):
-        return str(self.members)
-
-
 def main(input_file, isTest):
+    LanParty = frozenset
+    
     lines =  input_file.read().splitlines()
     connections = []
     for line in lines:
@@ -38,28 +22,26 @@ def main(input_file, isTest):
         for other in mine:
             for common in lan_dict[other]:
                 if common in mine and common not in [me, other]:
-                    lan_parties.add(LanGroup([me, other, common]))  
+                    lan_parties.add(LanParty([me, other, common]))  
       
-    print("pt1:", len([party for party in lan_parties if any(member.startswith("t") for member in party.members)]))
+    print("pt1:", len([party for party in lan_parties if any(member.startswith("t") for member in party)]))
     
     # pt2:
     lan_parties = set()
     for me, mine in lan_dict.items():
         for other in mine:
-            lan_parties.add(LanGroup([me, other]+[x for x in lan_dict[other] if x in mine]))
+            lan_parties.add(LanParty(sorted([me, other]+[x for x in lan_dict[other] if x in mine])))
             
     def areMembersInterconnected(lan_party):
-        members = lan_party.members
-        for me in members:
+        for me in lan_party:
             my_connections = lan_dict[me]
-            for other in members:
+            for other in lan_party:
                 if other not in my_connections and other != me:
                     return False
         return True
     
-    interconnected_parties = [it.members for it in (filter(areMembersInterconnected, list(lan_parties)))]
-    largest_party = sorted(interconnected_parties, key=lambda it: len(it)).pop()
-    print("pt2:", ",".join(largest_party))
+    interconnected_parties = sorted(filter(areMembersInterconnected, lan_parties), key=len)
+    print("pt2:", ",".join(interconnected_parties.pop()))
 
     
 if __name__ == '__main__':
