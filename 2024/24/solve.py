@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""AOC 19th day."""
+"""AOC 24th day."""
 import sys
 
 
