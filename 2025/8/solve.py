@@ -8,6 +8,9 @@ import itertools
 class Circuit():
     def  __init__(self, boxes = []):
         self.boxes = set(boxes)
+    
+    def __repr__(self):
+        return f'{list(self.boxes)}'
 
 
 def get_distance(p, q):
