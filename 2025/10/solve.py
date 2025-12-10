@@ -129,7 +129,7 @@ def solve_with_or_tools(buttons, target):
         return [solver.Value(v) for v in x]
     return None
 
-def main(input_file, limit):
+def main(input_file):
     lines =  input_file.read().splitlines()
 
     inputs = []
@@ -144,4 +144,4 @@ def main(input_file, limit):
                 
 if __name__ == '__main__':
     env_test_run = sys.argv[-1] == '-t'
-    main(open('1.txt' if not env_test_run else '0.txt', 'r'), 1000 if not env_test_run else 10)
+    main(open('1.txt' if not env_test_run else '0.txt', 'r'))
