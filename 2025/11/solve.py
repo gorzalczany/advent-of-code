@@ -3,32 +3,29 @@
 import sys
 from collections import deque
 
-def solve1(devices):
-    print(countPaths(devices, "you", []))
-
-def solve2(devices):
-    print(countPaths(devices, "svr", ["dac", "fft"]))
-
-def get_devices_reaching_out(devices):
+def filter_nodes_reaching_node(adjacency_map, end_node):
     found = set()
-    queue = deque([d for d in devices if "out" in devices[d]])
+    queue = deque([node for node in adjacency_map if end_node in adjacency_map[node]])
     while queue:
-        device = queue.popleft()
-        if device in found:
+        node = queue.popleft()
+        if node in found:
             continue
-        found.add(device)
-        for d in devices:
-            if device in devices[d] and d not in found:
-                queue.append(d)
+        found.add(node)
+        for adjacent in adjacency_map:
+            if node in adjacency_map[adjacent] and adjacent not in found:
+                queue.append(adjacent)
     return found
                 
-def countPaths(devices, start, required_nodes):
-    devices_reaching_out = get_devices_reaching_out(devices)
-    failure_condition = lambda node_name: node_name not in devices_reaching_out
-    success_condition = lambda node_name, keywords_found: node_name == "out" and all(k in keywords_found for k in required_nodes)
+def countPaths(adjacency_map, start, end, nodes_required_on_path):
+    nodes_reaching_end_node = filter_nodes_reaching_node(adjacency_map, end)
+    
+    def failure_condition(node_name):
+        return node_name not in nodes_reaching_end_node
+    def success_condition(node_name, visited_required):
+        return node_name == end and all(k in visited_required for k in nodes_required_on_path)
 
-    def counting_dfs(node_name, already_found_required, memo = {}):
-        memo_key = (node_name, frozenset(already_found_required))
+    def counting_dfs(node_name, visited_required, memo = {}):
+        memo_key = (node_name, frozenset(visited_required))
         if memo_key in memo:
             return memo[memo_key]
 
@@ -36,16 +33,15 @@ def countPaths(devices, start, required_nodes):
             return 0
 
         count = 0
-        for attached_device in devices[node_name]:
-            if success_condition(attached_device, already_found_required):
+        for adjacent in adjacency_map[node_name]:
+            if success_condition(adjacent, visited_required):
                 count += 1
                 continue
-            newly_found = already_found_required.copy()
-            for node in required_nodes:
-                if node in attached_device:
-                    newly_found.add(node)
+            visited = visited_required.copy()
+            if adjacent in nodes_required_on_path:
+                visited.add(adjacent)
 
-            count += counting_dfs(attached_device, newly_found, memo)
+            count += counting_dfs(adjacent, visited, memo)
 
         memo[memo_key] = count
         return count
@@ -61,8 +57,11 @@ def main(input_file):
         device_name, attachments_list = line.split(': ')
         devices[device_name] = set(attachments_list.split())
 
-    solve1(devices)
-    solve2(devices)
+    solve1 = countPaths(devices, "you", "out", [])
+    solve2 = countPaths(devices, "svr", "out", ["dac", "fft"])
+        
+    print(solve1)
+    print(solve2)
                 
 if __name__ == '__main__':
     env_test_run = sys.argv[-1] == '-t'
